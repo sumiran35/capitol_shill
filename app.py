@@ -77,6 +77,7 @@ def main():
     else:
         selected_sectors = []
 
+
     # Ticker filter
     all_tickers = sorted(df['ticker'].dropna().unique().tolist())
     selected_ticker = st.sidebar.selectbox("Specific Ticker", ["All"] + all_tickers)
@@ -84,10 +85,15 @@ def main():
     # Apply filters
     filtered_df = df.copy()
 
-    if selected_senators:
-        filtered_df = filtered_df[filtered_df['senator'].isin(selected_senators)]
-    if selected_sectors:
-        filtered_df = filtered_df[filtered_df['sector'].isin(selected_sectors)]
+    # Updated Filter Logic — Change starts here
+    if not selected_senators and not selected_sectors:
+        filtered_df = df.copy()  # show all rows if both empty
+    else:
+        if selected_senators:
+            filtered_df = filtered_df[filtered_df['senator'].isin(selected_senators)]
+        if selected_sectors:
+            filtered_df = filtered_df[filtered_df['sector'].isin(selected_sectors)]
+
     if selected_ticker != "All":
         filtered_df = filtered_df[filtered_df['ticker'] == selected_ticker]
 
@@ -151,15 +157,21 @@ def main():
     # Sort by Disclosure Date (Newest first)
     table_df = filtered_df[final_cols].sort_values(by='disclosure_date', ascending=False)
 
-    st.dataframe(
-        table_df.style.format({
-            "amount_est": "${:,.0f}",
-            "disclosure_date": "{:%Y-%m-%d}",
-            "transaction_date": "{:%Y-%m-%d}"
-        }),
-        use_container_width=True,
-        height=500
+    # st.dataframe(
+    #     table_df.style.format({
+    #         "amount_est": "${:,.0f}",
+    #         "disclosure_date": "{:%Y-%m-%d}",
+    #         "transaction_date": "{:%Y-%m-%d}"
+    #     }),
+    #     use_container_width=True,
+    #     height=500
+    # )
+    table_df = table_df.assign(
+        disclosure_date = table_df['disclosure_date'].dt.strftime('%Y-%m-%d').fillna(""),
+        transaction_date = table_df['transaction_date'].dt.strftime('%Y-%m-%d').fillna("")
     )
+
+    st.dataframe(table_df, use_container_width=True, height=500)
 
 
 if __name__ == '__main__':
